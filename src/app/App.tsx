@@ -251,6 +251,26 @@ function SetupOverview({ nav }: { nav: (id: string) => void }) {
   );
 }
 
+function SplashScreen({ nav }: { nav: (id: string) => void }) {
+  const [isFading, setIsFading] = useState(false);
+
+  return (
+    <div
+      className={`flex flex-col h-full bg-[#F6F3EE] transition-opacity duration-500 ${isFading ? "opacity-0" : "opacity-100"}`}
+      onTransitionEnd={() => {
+        if (isFading) nav("setup-overview");
+      }}
+    >
+      <div className="flex-1 flex items-center justify-center p-6 text-center">
+        <h1 className="text-[32px] font-semibold text-stone-900 tracking-tight">Welcome to LEND</h1>
+      </div>
+      <div className="p-4 pb-8 bg-[#F6F3EE] flex-shrink-0">
+        <PrimaryBtn label="Next" onClick={() => setIsFading(true)} />
+      </div>
+    </div>
+  );
+}
+
 // Q1 — How to receive (multi)
 function LikeQ1({ nav }: { nav: (id: string) => void }) {
   const [sel, toggle] = useMultiSelect();
@@ -585,7 +605,7 @@ function DeliveryWhatsApp({ nav }: { nav: (id: string) => void }) {
         </div>
         
       </div>
-      <BottomNav onBack={() => nav("delivery-method")} onHome={() => nav("setup-overview")} onNext={() => nav("delivery-time")} nextLabel="Send test and continue" />
+      <BottomNav onBack={() => nav("delivery-method")} onHome={() => nav("setup-overview")} onNext={() => nav("delivery-time")} nextLabel="Test" />
     </div>
   );
 }
@@ -727,7 +747,26 @@ const BROWSE_STORIES: BrowseStory[] = [
   },
 ];
 
-function BrowseMain({ nav, onOpenStory }: { nav: (id: string) => void; onOpenStory: (story: BrowseStory) => void }) {
+function toggleBrowseFilter(active: Set<string>, v: string): Set<string> {
+  const next = new Set(active);
+
+  if (v === "yes") {
+    next.delete("no");
+    next.add("informational");
+    return next;
+  }
+
+  if (v === "no") {
+    next.delete("informational");
+    return next;
+  }
+
+  if (next.has(v)) next.delete(v);
+  else next.add(v);
+  return next;
+}
+
+function BrowseMain({ nav, onOpenStory, activeFilters, onToggleFilter }: { nav: (id: string) => void; onOpenStory: (story: BrowseStory) => void; activeFilters: Set<string>; onToggleFilter: (value: string) => void }) {
   const [query, setQuery] = useState("");
   const stories = BROWSE_STORIES;
   return (
@@ -743,6 +782,16 @@ function BrowseMain({ nav, onOpenStory }: { nav: (id: string) => void; onOpenSto
           Filter
         </button>
       </div>
+      {activeFilters.size > 0 && (
+        <div className="bg-white px-4 py-2.5 border-b border-stone-200 flex items-center gap-2 flex-wrap flex-shrink-0">
+          <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Active filters:</span>
+          {[...activeFilters].map((f) => (
+            <button key={f} onClick={() => onToggleFilter(f)} style={{ background: P }} className={`text-white text-xs font-semibold px-2.5 py-1 rounded-full ${FOCUS}`}>
+              {`${f} x`}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {stories.map((s) => (
           <button key={s.title} onClick={() => onOpenStory(s)} className={`w-full bg-white rounded-2xl border border-stone-200 p-3.5 text-left hover:border-[#1B5E47] ${FOCUS} transition-all`}>
@@ -764,27 +813,9 @@ function BrowseMain({ nav, onOpenStory }: { nav: (id: string) => void; onOpenSto
   );
 }
 
-function BrowseFilters({ nav }: { nav: (id: string) => void }) {
-  const [active, setActive] = useState<Set<string>>(new Set());
+function BrowseFilters({ nav, active, setActive }: { nav: (id: string) => void; active: Set<string>; setActive: React.Dispatch<React.SetStateAction<Set<string>>> }) {
   const toggle = (v: string) => {
-    const n = new Set(active);
-
-    if (v === "yes") {
-      n.delete("no");
-      n.add("informational");
-      setActive(n);
-      return;
-    }
-
-    if (v === "no") {
-      n.delete("informational");
-      setActive(n);
-      return;
-    }
-
-    if (n.has(v)) n.delete(v);
-    else n.add(v);
-    setActive(n);
+    setActive((prev) => toggleBrowseFilter(prev, v));
   };
   const groups = [
     { label: "Length", opts: ["shorter", "longer"] },
@@ -801,7 +832,7 @@ function BrowseFilters({ nav }: { nav: (id: string) => void }) {
           <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Active filters:</span>
           {[...active].map((f) => (
             <button key={f} onClick={() => toggle(f)} style={{ background: P }} className={`text-white text-xs font-semibold px-2.5 py-1 rounded-full ${FOCUS}`}>
-              {f}
+              {`${f} x`}
             </button>
           ))}
         </div>
@@ -826,8 +857,8 @@ function BrowseFilters({ nav }: { nav: (id: string) => void }) {
         ))}
       </div>
       <div className="p-4 pb-8 bg-white border-t border-stone-200 space-y-2.5 flex-shrink-0">
-        <PrimaryBtn label={`Show stories${active.size > 0 ? ` — ${active.size} filter${active.size > 1 ? "s" : ""} active` : ""}`} onClick={() => nav("browse-main")} />
-        <OutlineBtn label="Clear all filters" onClick={() => setActive(new Set())} />
+        <PrimaryBtn label={`Close & show stories${active.size > 0 ? ` — ${active.size} filter${active.size > 1 ? "s" : ""} active` : ""}`} onClick={() => nav("browse-main")} />
+        <OutlineBtn label="Clear all filters" onClick={() => setActive(() => new Set())} />
       </div>
     </div>
   );
@@ -856,7 +887,7 @@ function BrowseStoryDetail({ nav, story }: { nav: (id: string) => void; story: B
           <div className="flex gap-3">
             <button onClick={() => setFeedback("more")} className={`flex-1 py-3.5 rounded-xl border-2 font-semibold text-[15px] transition-all ${FOCUS} ${feedback === "more" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}>More like this</button>
             <button onClick={() => { setFeedback("avoid"); nav("browse-feedback"); }} className={`flex-1 py-3.5 rounded-xl border-2 font-semibold text-[15px] transition-all ${FOCUS} ${feedback === "avoid" ? "border-red-400 bg-red-50 text-red-800" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}>Avoid in future</button>
-             <button onClick={() => { setFeedback(null); nav("browse-feedback"); }} className={`flex-1 py-3.5 rounded-xl border-2 font-semibold text-[15px] transition-all ${FOCUS} ${feedback === "avoid" ? "border-red-400 bg-red-50 text-red-800" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}>Done</button>
+          
           </div>
         </div>
       </div>
@@ -962,12 +993,16 @@ function ConsumeC2Video({ nav }: { nav: (id: string) => void }) {
         <p className="text-[15px] text-stone-600 leading-relaxed">Margaret talks about what brings her joy and how she stays connected to the people she loves.</p>
         {feedback && <FeedbackConfirm type={feedback} />}
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Your feedback</p>
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest">What did you think?</p>
           <div className="flex gap-3">
             <button onClick={() => setFeedback("more")} className={`flex-1 py-3.5 rounded-xl border-2 font-semibold text-[15px] transition-all ${FOCUS} ${feedback === "more" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}>More like this</button>
             <button onClick={() => { setFeedback("avoid"); nav("consume-c3"); }} className={`flex-1 py-3.5 rounded-xl border-2 font-semibold text-[15px] transition-all ${FOCUS} ${feedback === "avoid" ? "border-red-400 bg-red-50 text-red-800" : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"}`}>Avoid in future</button>
+            
           </div>
         </div>
+      </div>
+      <div className="p-4 pb-8 bg-white border-t border-stone-200 flex-shrink-0">
+        <PrimaryBtn label="Done" onClick={() => nav("browse-main")} />
       </div>
     </div>
   );
@@ -985,13 +1020,7 @@ function ConsumeC2Text({ nav }: { nav: (id: string) => void }) {
           <p>The hardest part is not what people think it is. It is not the forgetting. It is watching others worry about you.</p>
         </div>
       </div>
-      <div className="bg-white border-t border-stone-200 px-4 py-3 space-y-2.5 flex-shrink-0">
-        <div className="flex gap-3 mb-1">
-          <button className={`flex-1 py-3 rounded-xl border border-stone-200 font-semibold text-[15px] text-stone-700 hover:border-stone-300 ${FOCUS}`}>More like this</button>
-          <button onClick={() => nav("consume-c3")} className={`flex-1 py-3 rounded-xl border border-stone-200 font-semibold text-[15px] text-stone-700 hover:border-stone-300 ${FOCUS}`}>Avoid in future</button>
-        </div>
-        <PrimaryBtn label="Next page" onClick={() => { }} />
-      </div>
+     
     </div>
   );
 }
@@ -1046,11 +1075,15 @@ type AnnotationType = "note" | "question" | "access";
 interface ScreenDef {
   label: string;
   part: string;
-  render: (nav: (id: string) => void, context?: { selectedBrowseStory: BrowseStory | null; setSelectedBrowseStory: (story: BrowseStory | null) => void }) => React.ReactNode;
+  render: (nav: (id: string) => void, context?: { selectedBrowseStory: BrowseStory | null; setSelectedBrowseStory: (story: BrowseStory | null) => void; browseActiveFilters: Set<string>; setBrowseActiveFilters: React.Dispatch<React.SetStateAction<Set<string>>> }) => React.ReactNode;
   annotations: { type: AnnotationType; text: string }[];
 }
 
 const SCREENS: Record<string, ScreenDef> = {
+  "splash": {
+    label: "Welcome", part: "Start", render: (nav) => <SplashScreen nav={nav} />,
+    annotations: [{ type: "note", text: "Landing splash screen with fade transition to setup." }],
+  },
   "setup-overview": {
     label: "Setup overview", part: "Part 1 — Story Selection", render: (nav) => <SetupOverview nav={nav} />,
     annotations: [
@@ -1137,8 +1170,8 @@ const SCREENS: Record<string, ScreenDef> = {
   "delivery-whatsapp": {
     label: "Delivery — WhatsApp setup", part: "Part 1 — Story Selection", render: (nav) => <DeliveryWhatsApp nav={nav} />,
     annotations: [
-      { type: "note", text: "Only shown when WhatsApp is selected." },
-      { type: "question", text: "Does the user need to opt in via WhatsApp before this step? How is the number verified? Can the user return to the app from WhatsApp after setup?" },
+      { type: "note", text: "Only shown when WhatsApp is selected. The mobile number can be pre-filled in from our records." },
+      { type: "question", text: "Does the user need to opt in via WhatsApp before this step? Can the user return to the app from WhatsApp after setup? Do we allow them to inpyt a number or only use the one provided at trial signup?" },
     ],
   },
   "delivery-time": { label: "Delivery — Time of day", part: "Part 1 — Story Selection", render: (nav) => <DeliveryTime nav={nav} />, annotations: [{ type: "note", text: "Single-select. Descriptive time ranges, not specific times." }] },
@@ -1152,13 +1185,12 @@ const SCREENS: Record<string, ScreenDef> = {
   "setup-done": {
     label: "Setup confirmation", part: "Part 1 — Story Selection", render: (nav) => <SetupDone nav={nav} />,
     annotations: [
-      { type: "note", text: "Shown after 'I'm happy with these choices'. Message is personalised to the delivery schedule." },
-      { type: "note", text: "User can return to choices — this is not a dead end." },
+      { type: "note", text: "Shown after 'I'm happy with these choices'. Message is personalised to the delivery schedule and choices." }
     ],
   },
-  "browse-main": { label: "Browse — Main", part: "Part 2 — Story Browsing", render: (nav, context) => <BrowseMain nav={nav} onOpenStory={(story) => { context?.setSelectedBrowseStory(story); nav("browse-story-detail"); }} />, annotations: [{ type: "note", text: "Search bar and Filter button always visible. Story cards scroll below." },{ type: "note", text: "This is an interface a participant can come to at any time to browse the full collection of stories. The only stories missing are those that match to stories a participant has indicated they do not want to see (in the setup flow)" },] },
+  "browse-main": { label: "Browse — Main", part: "Part 2 — Story Browsing", render: (nav, context) => <BrowseMain nav={nav} activeFilters={context?.browseActiveFilters || new Set<string>()} onToggleFilter={(value) => context?.setBrowseActiveFilters((prev) => toggleBrowseFilter(prev, value))} onOpenStory={(story) => { context?.setSelectedBrowseStory(story); nav("browse-story-detail"); }} />, annotations: [{ type: "note", text: "Search bar and Filter button always visible. Story cards scroll below." },{ type: "note", text: "A participant can come to at any time to browse the full collection of stories. The only stories missing are those that match to stories a participant has indicated they do not want to see (in the setup flow)" },] },
   "browse-filters": {
-    label: "Browse — Filters", part: "Part 2 — Story Browsing", render: (nav) => <BrowseFilters nav={nav} />,
+    label: "Browse — Filters", part: "Part 2 — Story Browsing", render: (nav, context) => <BrowseFilters nav={nav} active={context?.browseActiveFilters || new Set<string>()} setActive={context?.setBrowseActiveFilters || (() => undefined)} />,
     annotations: [
         
       { type: "note", text: "Full-screen filter view on mobile. Active filters shown as tappable pills — tapping removes the filter." },
@@ -1205,6 +1237,7 @@ const SCREENS: Record<string, ScreenDef> = {
 };
 
 const SCREEN_ORDER = [
+  "splash",
   "setup-overview",
   "like-q1", "like-q2", "like-q3", "like-q4", "like-q5",
   "like-sample1",
@@ -1253,9 +1286,10 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [currentId, setCurrentId] = useState("setup-overview");
+  const [currentId, setCurrentId] = useState("splash");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedBrowseStory, setSelectedBrowseStory] = useState<BrowseStory | null>(BROWSE_STORIES[0]);
+  const [browseActiveFilters, setBrowseActiveFilters] = useState<Set<string>>(new Set());
 
   const screen = SCREENS[currentId];
   const currentIdx = SCREEN_ORDER.indexOf(currentId);
@@ -1307,7 +1341,7 @@ export default function App() {
 
         <div className="flex-1 overflow-auto p-8 bg-[#efeae0]">
           <div className="flex gap-8 items-start">
-            <PhoneFrame>{screen?.render(goTo, { selectedBrowseStory, setSelectedBrowseStory })}</PhoneFrame>
+            <PhoneFrame>{screen?.render(goTo, { selectedBrowseStory, setSelectedBrowseStory, browseActiveFilters, setBrowseActiveFilters })}</PhoneFrame>
 
             <div className="flex-1 max-w-[280px] space-y-4 min-w-0">
               <div>
