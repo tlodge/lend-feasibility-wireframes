@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Pause, Volume2, SlidersHorizontal } from "lucide-react";
 
 // ─── Multi-select hook ────────────────────────────────────
@@ -1082,7 +1082,7 @@ interface ScreenDef {
 const SCREENS: Record<string, ScreenDef> = {
   "splash": {
     label: "Welcome", part: "Start", render: (nav) => <SplashScreen nav={nav} />,
-    annotations: [{ type: "note", text: "Landing splash screen with fade transition to setup." }],
+    annotations: [{ type: "note", text: "Landing splash screen with fade transition to setup. Note that this will be designed to fit with the LEND logo/theme" }],
   },
   "setup-overview": {
     label: "Setup overview", part: "Part 1 — Story Selection", render: (nav) => <SetupOverview nav={nav} />,
@@ -1106,7 +1106,7 @@ const SCREENS: Record<string, ScreenDef> = {
   "like-q3": { label: "Like — Q3: Who tells the story", part: "Part 1 — Story Selection", render: (nav) => <LikeQ3 nav={nav} />, annotations: [{ type: "note", text: "Multi-select. 'Don't mind' and 'Don't know' are exclusive." }] },
   "like-q4": { label: "Like — Q4: What about", part: "Part 1 — Story Selection", render: (nav) => <LikeQ4 nav={nav} />, annotations: 
   [{ type: "note", text: "Multi-select with 8 topics. 'Don't mind' and 'Don't know' are exclusive." },
-    { type: "question", text: "Is 8 topics too many, can we reduce them?" },
+    { type: "question", text: "8 topics may be too many, can we reduce them?" },
   ] },
   "like-q5": {
     label: "Like — Q5: Useful?", part: "Part 1 — Story Selection", render: (nav) => <LikeQ5 nav={nav} />,
@@ -1250,6 +1250,28 @@ const SCREEN_ORDER = [
   "consume-c1", "consume-c2-video", "consume-c2-text", "consume-c3", "consume-c4",
 ];
 
+const ROUTE_TO_SCREEN: Record<string, string> = {
+  "/": "splash",
+  "/browse": "browse-main",
+  "/consume": "consume-c1",
+};
+
+const SCREEN_TO_ROUTE: Record<string, string> = {
+  "splash": "/",
+  "browse-main": "/browse",
+  "consume-c1": "/consume",
+};
+
+function normalizePath(pathname: string): string {
+  const trimmed = pathname.replace(/\/+$/, "");
+  return trimmed || "/";
+}
+
+function getScreenFromPath(pathname: string): string {
+  const normalized = normalizePath(pathname);
+  return ROUTE_TO_SCREEN[normalized] || "splash";
+}
+
 const PARTS = ["Part 1 — Story Selection", "Part 2 — Story Browsing", "Part 3 — Story Consumption"];
 
 const ANNOTATION_STYLES: Record<AnnotationType, string> = {
@@ -1286,14 +1308,38 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [currentId, setCurrentId] = useState("splash");
+  const [currentId, setCurrentId] = useState(() => {
+    if (typeof window === "undefined") return "splash";
+    return getScreenFromPath(window.location.pathname);
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedBrowseStory, setSelectedBrowseStory] = useState<BrowseStory | null>(BROWSE_STORIES[0]);
   const [browseActiveFilters, setBrowseActiveFilters] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    const onPopState = () => {
+      setCurrentId(getScreenFromPath(window.location.pathname));
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const screen = SCREENS[currentId];
   const currentIdx = SCREEN_ORDER.indexOf(currentId);
-  const goTo = (id: string) => { if (SCREENS[id]) setCurrentId(id); };
+  const goTo = (id: string) => {
+    if (!SCREENS[id]) return;
+
+    setCurrentId(id);
+
+    const targetRoute = SCREEN_TO_ROUTE[id];
+    if (!targetRoute) return;
+
+    const currentPath = normalizePath(window.location.pathname);
+    if (currentPath !== targetRoute) {
+      window.history.pushState({}, "", targetRoute);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#f4f1eb" }}>
