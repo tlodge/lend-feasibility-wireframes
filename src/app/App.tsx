@@ -1128,7 +1128,7 @@ const SCREENS: Record<string, ScreenDef> = {
     label: "Like — Q7: Type of dementia", part: "Part 1 — Story Selection", render: (nav) => <LikeQ7 nav={nav} />,
     annotations: [
       { type: "note", text: "Multi-select. 'Don't mind' and 'Don't know' are exclusive." },
-      { type: "question", text: "Early usability testing suggested that choices around dementia type may be too complex? Also wondering if it will be rare that coders will be able tospecify this?" },
+      { type: "question", text: "Early usability testing suggested that choices around dementia type may be too complex? Also wondering if it will be rare that coders will be able to specify this?" },
     ],
   },
   "like-q8": { label: "Like — Q8: Tone", part: "Part 1 — Story Selection", render: (nav) => <LikeQ8 nav={nav} />, annotations: [{ type: "question", text: "Can we reduce the number of options?" }] },
@@ -1136,22 +1136,21 @@ const SCREENS: Record<string, ScreenDef> = {
     label: "Like — Q9: Identity aspects", part: "Part 1 — Story Selection", render: (nav) => <LikeQ9 nav={nav} />,
     annotations: [
       { type: "note", text: "Multi-select, no exclusive options. User can continue without selecting any (implying none of these are important to them)." },
-      { type: "question", text: "Presumably when answering these they're wanting a match to their own identity. For example, a person with Afro-Caribbean heritage who selects 'Ethnicity' is indicating that they are interested in stories that reflect this heritage? If so, we will need to capture this information for the system to respond to these choices." },
+      { type: "question", text: "Presumably when answering these they're wanting a match to their own identity. For example, a person with Afro-Caribbean heritage who selects 'Ethnicity' is indicating that they are interested in stories that reflect this heritage? If so, we will need to capture this information for the system to respond to these choices. This has been recorded as a MAYBE in the decision doc (C6)" },
     ],
   },
   "like-sample2": { label: "Sample stories (after Q9)", part: "Part 1 — Story Selection", render: (nav) => <LikeSample2 nav={nav} />, annotations: [] },
   "like-summary": {
     label: "Like — Summary", part: "Part 1 — Story Selection", render: (nav) => <LikeSummary nav={nav} />,
     annotations: [
-      { type: "note", text: "Each row shows label and current value. 'Change' links directly to the relevant question. User returns to this summary after editing, not to the full flow." },
+      { type: "note", text: "Each row shows label and current value. 'Change' links directly to the relevant question. User returns to this summary after editing, not to the full flow (not implemented in wireframes)" },
       
     ],
   },
   "avoid-q1": {
     label: "Avoidance — Q1", part: "Part 1 — Story Selection", render: (nav) => <AvoidQ1 nav={nav} />,
     annotations: [
-      { type: "note", text: "'Nothing. I am happy to see any kind of story' is exclusive and clears all others. 'Something else' reveals a free-text field." },
-      { type: "question", text: "How should 'Something else' free-text be stored and used? Is there a character limit or content moderation?" },
+      { type: "note", text: "'Nothing. I am happy to see any kind of story' is exclusive and clears all others. 'Something else' reveals a free-text field." }
     ],
   },
   "avoid-summary": {
@@ -1164,14 +1163,14 @@ const SCREENS: Record<string, ScreenDef> = {
     label: "Delivery — Method", part: "Part 1 — Story Selection", render: (nav) => <DeliveryMethod nav={nav} />,
     annotations: [
       { type: "note", text: "Single-select. Selecting WhatsApp adds an extra screen. Other methods skip straight to time selection." },
-      { type: "question", text: "If the user selects WhatsApp but does not have it installed, then it will not be set up and other default options (SMS) will be used." },
+      { type: "note", text: "If the user selects WhatsApp but does not have it installed, then it will not be set up and other default options (SMS) will be used." },
     ],
   },
   "delivery-whatsapp": {
     label: "Delivery — WhatsApp setup", part: "Part 1 — Story Selection", render: (nav) => <DeliveryWhatsApp nav={nav} />,
     annotations: [
       { type: "note", text: "Only shown when WhatsApp is selected. The mobile number can be pre-filled in from our records." },
-      { type: "question", text: "Does the user need to opt in via WhatsApp before this step? Can the user return to the app from WhatsApp after setup? Do we allow them to inpyt a number or only use the one provided at trial signup?" },
+      { type: "question", text: "Does the user need to opt in via WhatsApp before this step? Can the user return to the app from WhatsApp after setup? Do we allow them to input a number or only use the one provided at trial signup?" },
     ],
   },
   "delivery-time": { label: "Delivery — Time of day", part: "Part 1 — Story Selection", render: (nav) => <DeliveryTime nav={nav} />, annotations: [{ type: "note", text: "Single-select. Descriptive time ranges, not specific times." }] },
@@ -1222,8 +1221,7 @@ const SCREENS: Record<string, ScreenDef> = {
   "consume-c2-text": {
     label: "C2 — Text story", part: "Part 3 — Story Consumption", render: (nav) => <ConsumeC2Text nav={nav} />,
     annotations: [
-      { type: "note", text: "Large readable text (18px). Long stories paginated. Feedback and Next page both visible without scrolling." },
-      { type: "question", text: "Are text story pages pre-split server-side or split in the browser?" },
+      { type: "note", text: "Large readable text (18px). Long stories paginated. Feedback and Next page both visible without scrolling." }
     ],
   },
   "consume-c3": { label: "C3 — Avoid feedback", part: "Part 3 — Story Consumption", render: (nav) => <ConsumeC3 nav={nav} />, annotations: [{ type: "note", text: "Shown after 'Avoid in future'. Skip always available." }] },
